@@ -1,9 +1,6 @@
 # bot.py
 
 from pyrogram import Client, filters
-from commands.approvi import new_member_join
-from commands.start import start_command
-from commands.log import log_message
 from config import Config
 from pytz import timezone
 # Replace these placeholders with your actual values
