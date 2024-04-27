@@ -1,7 +1,7 @@
 # bot.py
 
 from pyrogram import Client, filters
-from commands.approve import new_member_join
+from commands.approvi import new_member_join
 from commands.start import start_command
 from commands.log import log_message
 
