@@ -1,7 +1,7 @@
 # commands/start_command.py
 
 from pyrogram.types import Message
-
+from bot import START_PICTURE_URL 
 # Handler for the start command
 def start_command(client, message: Message):
     if START_PICTURE_URL:
