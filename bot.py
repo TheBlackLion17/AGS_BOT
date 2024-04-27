@@ -3,9 +3,7 @@
 from pyrogram import Client, filters
 from config import Config
 from pytz import timezone
-# Replace these placeholders with your actual values
 
-LOG_CHANNEL = -1002016756529  # Replace with your log channel ID
 
 # Initialize the Pyrogram Client
 class app(Client):
