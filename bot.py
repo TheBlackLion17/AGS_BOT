@@ -18,11 +18,13 @@ app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 # Register the handler for new member join events
 app.on_message(filters.new_chat_members)(new_member_join)
 
-# Register the handler for the start command
-app.on_message(filters.command("start"))(start_command)
-
-# Register the message handler to log messages
-app.add_handler(log_message)
-
+@app.on_message(filters.command("start"))
+def start_command(client, message):
+    if START_PICTURE_URL:
+        client.send_photo(
+            chat_id=message.chat.id,
+            photo=START_PICTURE_URL,
+            caption="Welcome to the group! Feel free to introduce yourself."
+        )
 # Start the Pyrogram Client
 app.run()
