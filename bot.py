@@ -1,9 +1,9 @@
 # bot.py
 
 from pyrogram import Client, filters
-from commands.new_member_handler import new_member_join
-from commands.start_command import start_command
-from commands.log_message import log_message
+from commands.approve import new_member_join
+from commands.start import start_command
+from commands.log import log_message
 
 # Replace these placeholders with your actual values
 API_ID = "29812636"
