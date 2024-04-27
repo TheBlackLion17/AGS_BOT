@@ -4,25 +4,37 @@ from pyrogram import Client, filters
 from commands.approvi import new_member_join
 from commands.start import start_command
 from commands.log import log_message
+from pyrogram import Client, __version__
+from pyrogram.raw.all import layer
+from config import Config
+from aiohttp import web
+from route import web_server
 
-# Replace these placeholders with your actual values
-API_ID = "29812636"
-API_HASH = "581c6dd6f0af0f8c8326c9b28920ae54"
-BOT_TOKEN = "6677982267:AAEcndDulVI6f9y4k_xC4UAVnY4vEPGzVU8"
-LOG_CHANNEL_ID = -1002016756529  # Replace with your log channel ID
-START_PICTURE_URL = "https://telegra.ph/file/240720bec6145bb269f17.jpg"  # Replace with your start picture URL
+class Bot(Client):
 
-# Initialize the Pyrogram Client
-app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+    def __init__(self):
+        super().__init__(
+            name="renamer",
+            api_id=Config.API_ID,
+            api_hash=Config.API_HASH,
+            bot_token=Config.BOT_TOKEN,
+            workers=200,
+            plugins={"root": "commands"},
+            sleep_threshold=15,
+        )
 
-# Register the handler for new member join events
-app.on_message(filters.new_chat_members)(new_member_join)
+    async def start(self):
+        await super().start()
+        me = await self.get_me()
+        self.mention = me.mention
+        self.username = me.username  
+        self.uptime = Config.BOT_UPTIME     
+        if Config.WEBHOOK:
+            app = web.AppRunner(await web_server())
+            await app.setup()       
+            await web.TCPSite(app, "0.0.0.0", 8080).start()     
+        print(f"{me.first_name} Is On To Fire.....🔥")
+        
+        
 
-# Register the handler for the start command
-app.on_message(filters.command("start"))(start_command)
-
-# Register the message handler to log messages
-app.add_handler(log_message)
-
-# Start the Pyrogram Client
-app.run()
+Bot().run()
