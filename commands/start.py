@@ -1,14 +1,13 @@
-# commands/start_command.py
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ForceReply, CallbackQuery
+from config import Config, Txt 
 
-from pyrogram.types import Message
-from bot import START_PICTURE_URL 
-# Handler for the start command
-def start_command(client, message: Message):
-    if START_PICTURE_URL:
-        client.send_photo(
-            chat_id=message.chat.id,
-            photo=START_PICTURE_URL,
-            caption="Welcome to the group! Feel free to introduce yourself."
-        )
-    else:
-        message.reply_text("Welcome to the group! Feel free to introduce yourself.")
+
+@Client.on_message(filters.private & filters.command("start"))
+async def start(client, message):
+    user = message.from_user
+    button = InlineKeyboardMarkup([
+        [InlineKeyboardButton('♨️ Updates', url='https://t.me/AgsModsOG'),
+        InlineKeyboardButton('⭕️ Sᴜᴩᴩᴏʀᴛ', url='https://t.me/AgsModsOG')],
+    [InlineKeyboardButton("👨‍💻 Developer", url='https://t.me/Agsmod')]
+    ])
