@@ -15,20 +15,10 @@ class Bot(Client):
             bot_token=Config.BOT_TOKEN
         )
 
-    async def start(self):
-        await super().start()
-        me = await self.get_me()
-        self.mention = me.mention
-        self.username = me.username
+@Bot.on_message(filters.command("start"))
+async def start_cmd(client, message):
+    print("bot has been started")
 
-        if Config.LOG_CHANNEL:
-            try:
-                curr = datetime.now(timezone("Asia/Kolkata"))
-                date = curr.strftime('%d %B, %Y')
-                time = curr.strftime('%I:%M:%S %p')
-                await self.send_message(Config.LOG_CHANNEL, f"**{me.mention} Is Restarted !!**\n\n📅 Date : `{date}`\n⏰ Time : `{time}`\n🌐 Timezone : `Asia/Kolkata`\n\n🉐 Version : `v{__version__} (Layer {layer})`</b>")                                
-            except:
-                print("Please Make This Is Admin In Your Log Channel")
-
+print("Bot Started")
 # Start the Pyrogram Client
 Bot().run()
