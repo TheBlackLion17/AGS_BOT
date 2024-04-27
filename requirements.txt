@@ -1,4 +1,4 @@
 pyrogram==2.0.106
-python-dotenv==1.0.1
+dnspython==2.3.0
 pytz==2023.3
 TgCrypto==1.2.5 
