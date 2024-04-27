@@ -1,40 +1,28 @@
 # bot.py
 
 from pyrogram import Client, filters
-from commands.approvi import new_member_join
-from commands.start import start_command
-from commands.log import log_message
-from pyrogram import Client, __version__
-from pyrogram.raw.all import layer
-from config import Config
-from aiohttp import web
-from route import web_server
+from commands.new_member_handler import new_member_join
+from commands.start_command import start_command
+from commands.log_message import log_message
 
-class Bot(Client):
+# Replace these placeholders with your actual values
+API_ID = "YOUR_API_ID"
+API_HASH = "YOUR_API_HASH"
+BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
+LOG_CHANNEL_ID = -100123456789  # Replace with your log channel ID
+START_PICTURE_URL = "URL_TO_YOUR_START_PICTURE"  # Replace with your start picture URL
 
-    def __init__(self):
-        super().__init__(
-            name="renamer",
-            api_id=Config.API_ID,
-            api_hash=Config.API_HASH,
-            bot_token=Config.BOT_TOKEN,
-            workers=200,
-            plugins={"root": "commands"},
-            sleep_threshold=15,
-        )
+# Initialize the Pyrogram Client
+app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-    async def start(self):
-        await super().start()
-        me = await self.get_me()
-        self.mention = me.mention
-        self.username = me.username  
-        self.uptime = Config.BOT_UPTIME     
-        if Config.WEBHOOK:
-            app = web.AppRunner(await web_server())
-            await app.setup()       
-            await web.TCPSite(app, "0.0.0.0", 8080).start()     
-        print(f"{me.first_name} Is On To Fire.....🔥")
-        
-        
+# Register the handler for new member join events
+app.on_message(filters.new_chat_members)(new_member_join)
 
-Bot().run()
+# Register the handler for the start command
+app.on_message(filters.command("start"))(start_command)
+
+# Register the message handler to log messages
+app.add_handler(log_message)
+
+# Start the Pyrogram Client
+app.run()
