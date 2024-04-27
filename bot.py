@@ -6,7 +6,7 @@ from pytz import timezone
 
 
 # Initialize the Pyrogram Client
-class app(Client):
+class Bot(Client):
     def __init__(self):
         super().__init__(
             api_id=Config.API_ID,
@@ -30,4 +30,4 @@ class app(Client):
                 print("Please Make This Is Admin In Your Log Channel")
 
 # Start the Pyrogram Client
-app.run()
+Bot().run()
