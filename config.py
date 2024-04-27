@@ -6,6 +6,8 @@ class Config(object):
 
     START_PIC   = os.environ.get("START_PIC", "https://telegra.ph/file/240720bec6145bb269f17.jpg")
 
+    LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1002016756529"))
+
 class Txt(object):
     # part of text configuration
     START_TXT = """Halo {}  what's up
