@@ -1,4 +1,4 @@
-import os, time
+import os 
 class Config(object):
     # pyro client config
     API_ID    = os.environ.get("API_ID", "29812636")
