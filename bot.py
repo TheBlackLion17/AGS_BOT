@@ -20,9 +20,7 @@ async def handle_message(client, message: Message):
     if message is None:
         return
 
-    if message.text and message.text.startswith("/start"):
-    await message.reply_text("click /addfilter")
-    return 
+    
 
 
     # Check if the message is a command to create a filter
