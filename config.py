@@ -1,10 +1,9 @@
 import os 
 
-    # pyro client config
-    API_ID    = "29812636"
-    API_HASH  = "581c6dd6f0af0f8c8326c9b28920ae54"
-    BOT_TOKEN = "6677982267:AAEcndDulVI6f9y4k_xC4UAVnY4vEPGzVU8"
-    ADMIN_USER_ID = "5909932224"
+API_ID    = "29812636"
+API_HASH  = "581c6dd6f0af0f8c8326c9b28920ae54"
+BOT_TOKEN = "6677982267:AAEcndDulVI6f9y4k_xC4UAVnY4vEPGzVU8"
+ADMIN_USER_ID = "5909932224"
 
     START_PIC   = os.environ.get("START_PIC", "https://telegra.ph/file/240720bec6145bb269f17.jpg")
 
