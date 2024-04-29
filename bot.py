@@ -1,54 +1,65 @@
-# bot.py
-
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-import time
-from config import API_ID, API_HASH, BOT_TOKEN, ADMIN_USER_ID
+from pyrogram.types import Message
+
+# Importing configuration from config.py
+from config import API_ID, API_HASH, BOT_TOKEN, ADMIN_USER_IDS
 
 # Initialize the Pyrogram Client
 app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Custom filter to match messages with the specified button callback data
-@filters.create(lambda _, __, update: update.message and update.message.reply_to_message and update.message.reply_to_message.from_user.is_self)
-def button_callback_filter(_, __, update):
-    return update.data == "send_file_button"
+# Custom filter to check if the user is an admin
+def is_admin(_, __, message: Message):
+    return message.from_user.id in ADMIN_USER_IDS
 
-# Handler for the command to trigger sending the message with the button
-@app.on_message(filters.command("sendfile"))
-def send_file_command(client, message):
-    # Check if the user is the admin
-    if message.from_user.id == ADMIN_USER_ID:
-        # Reply with instructions
-        message.reply_text("Please send me the image and text for the caption. The image should be sent as a photo.")
+# Handler for the /start command
+@app.on_message(filters.command("start") & is_admin)
+async def start_command(client, message: Message):
+    # Prompt the admin to set the image and caption
+    await message.reply_text("Please set the image and caption.")
 
-        # Set the next handler
-        app.register_next_step_handler(message, handle_image_and_text)
-    else:
-        message.reply_text("You are not authorized to use this command.")
+    # Set the next handler to handle image and caption setting
+    await app.set_next_step(chat_id=message.chat.id, action=set_image_and_caption)
 
-# Handler to handle image and text sent by the admin
-def handle_image_and_text(client, message):
-    # Check if the message is a photo
+# Handler to handle image and caption setting
+async def set_image_and_caption(client, message: Message):
+    # Check if the message contains an image
     if message.photo:
-        # Get the largest available photo
+        # Get the photo
         photo = message.photo[-1]
         # Download the photo
-        photo_path = photo.download(file_name="image.jpg")
+        photo_path = await photo.download(file_name="image.jpg")
 
-        # Get the text for the caption
-        caption = message.text
+        # Set the image and caption
+        app.image_path = photo_path
+        app.caption = message.text
 
-        # Send the file
-        message.reply_photo(photo_path, caption=caption)
-
-        # Sleep for 60 seconds
-        time.sleep(60)
-
-        # Delete the message after 60 seconds
-        message.delete()
+        # Ask the admin to send the file
+        await message.reply_text("Please send the file.")
     else:
-        # If the message is not a photo, ask the admin to resend
-        message.reply_text("Please send the image as a photo.")
+        # If the message does not contain an image, ask the admin to resend
+        await message.reply_text("Please send the image as a photo.")
+
+# Handler for file sent by the admin
+@app.on_message(is_admin)
+async def handle_file(client, message: Message):
+    # Check if the bot has set the image and caption
+    if hasattr(app, 'image_path') and hasattr(app, 'caption'):
+        # Check if the message contains a file
+        if message.document:
+            # Download the file
+            file_path = await message.download(file_name="file")
+
+            # Send the file with the set caption
+            await message.reply_photo(photo=app.image_path, caption=app.caption)
+
+            # Delete the message after sending the file
+            await message.delete()
+        else:
+            # If the message does not contain a file, ask the admin to resend
+            await message.reply_text("Please send the file.")
+    else:
+        # If the bot has not set the image and caption, ignore the file
+        pass
 
 # Start the Pyrogram Client
 app.run()
