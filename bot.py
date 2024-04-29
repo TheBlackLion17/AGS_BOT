@@ -7,9 +7,10 @@ from config import API_ID, API_HASH, BOT_TOKEN, ADMIN_USER_IDS
 # Initialize the Pyrogram Client
 app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Custom filter to check if the user is an admin
+## Custom filter to check if the user is an admin
 def is_admin(_, __, message: Message):
     return message.from_user.id in ADMIN_USER_IDS
+ 
 
 # Handler for the /start command
 @app.on_message(filters.command("start") & is_admin)
