@@ -26,10 +26,13 @@ async def handle_message(client, message: Message):
     if message.chat.id in conversation_state and conversation_state[message.chat.id] == "awaiting_image_and_caption":
         # Check if the message contains an image
         if message.photo:
-            # Get the photo
-            photo = message.photo[-1]
+            # Get the largest photo size
+            photo = message.photo
+            file_id = photo.file_id
+            # Get the photo file object using the file ID
+            photo_file = await client.get_file(file_id)
             # Download the photo
-            photo_path = await photo.download(file_name="image.jpg")
+            photo_path = await photo_file.download(file_name="image.jpg")
 
             # Set the state of the conversation to "awaiting_file"
             conversation_state[message.chat.id] = "awaiting_file"
@@ -67,5 +70,4 @@ async def handle_message(client, message: Message):
             # If the message does not contain a file, ask the user to resend
             await message.reply_text("Please send the file.")
 
-# Start the Pyrogram Client
 app.run()
