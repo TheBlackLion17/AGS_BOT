@@ -11,7 +11,7 @@ app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 
 # Handler for the /start command
-@app.on_message(filters.command("start") & is_admin)
+@app.on_message(filters.command("start"))
 async def start_command(client, message: Message):
     # Prompt the admin to set the image and caption
     await message.reply_text("Please set the image and caption.")
