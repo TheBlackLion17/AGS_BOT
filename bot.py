@@ -2,7 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 # Importing configuration from config.py
-from config import API_ID, API_HASH, BOT_TOKEN, ADMIN_IDS
+from config import API_ID, API_HASH, BOT_TOKEN, ADMIN_ID
 
 # Initialize the Pyrogram Client
 app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
@@ -14,11 +14,16 @@ filters_dict = {}
 document_cache = {}
 
 # Handler for messages
-@app.on_message(filters.private & filters.user(ADMIN_IDS))
+@app.on_message(filters.private & filters.user(ADMIN_ID))
 async def handle_message(client, message: Message):
     # Check if the message is not None
     if message is None:
         return
+
+    if message.text and message.text.startswith("/start"):
+    await message.reply_text("click /addfilter")
+    return 
+
 
     # Check if the message is a command to create a filter
     if message.text and message.text.startswith("/addfilter"):
