@@ -14,7 +14,7 @@ filters_dict = {}
 @app.on_message()
 async def handle_message(client, message: Message):
     # Check if the message is from an admin
-    if message.from_user.id != ADMIN_ID:
+    if message.from_user.id not in ADMIN_ID:
         await message.reply_text("You are not authorized to use this bot.")
         return
     
