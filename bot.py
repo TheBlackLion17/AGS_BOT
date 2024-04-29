@@ -1,5 +1,5 @@
 from pyrogram import Client, filters
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 # Importing configuration from config.py
 from config import API_ID, API_HASH, BOT_TOKEN
@@ -7,67 +7,48 @@ from config import API_ID, API_HASH, BOT_TOKEN
 # Initialize the Pyrogram Client
 app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Dictionary to store the state of the conversation for each user
-conversation_state = {}
-
-# Handler for the /start command
-@app.on_message(filters.command("start"))
-async def start_command(client, message: Message):
-    # Set the state of the conversation to "awaiting_image_and_caption"
-    conversation_state[message.chat.id] = "awaiting_image_and_caption"
-    
-    # Prompt the user to set the image and caption
-    await message.reply_text("Please set the image and caption.")
+# Dictionary to store user-defined filters
+filters_dict = {}
 
 # Handler for messages
 @app.on_message()
 async def handle_message(client, message: Message):
-    # Check if the user is in the "awaiting_image_and_caption" state
-    if message.chat.id in conversation_state and conversation_state[message.chat.id] == "awaiting_image_and_caption":
-        # Check if the message contains an image
-        if message.photo:
-            # Get the largest photo size
-            photo = message.photo
-            file_id = photo.file_id
-            # Get the photo file object using the file ID
-            photo_file = await client.get_file(file_id)
-            # Download the photo
-            photo_path = await photo_file.download(file_name="image.jpg")
+    # Check if the message is from an admin (you may customize this logic)
+    if message.from_user.id not in [123456789, 987654321]:  # Replace with your admin user IDs
+        await message.reply_text("You are not authorized to use this bot.")
+        return
+    
+    # Check if the message is a command to create a filter
+    if message.text.startswith("/addfilter"):
+        # Split the message into filter name, image caption, and button text
+        _, filter_name, image_caption, button_text = message.text.split(maxsplit=3)
 
-            # Set the state of the conversation to "awaiting_file"
-            conversation_state[message.chat.id] = "awaiting_file"
+        # Add the filter to the filters dictionary
+        filters_dict[filter_name] = {
+            "image_caption": image_caption,
+            "button_text": button_text
+        }
 
-            # Set the image path and caption in the conversation state
-            conversation_state[message.chat.id + "_image_path"] = photo_path
-            conversation_state[message.chat.id + "_caption"] = message.text
+        await message.reply_text(f"Filter '{filter_name}' added successfully.")
+        return
 
-            # Prompt the user to send the file
-            await message.reply_text("Please send the file.")
-        else:
-            # If the message does not contain an image, ask the user to resend
-            await message.reply_text("Please send the image as a photo.")
-    # Check if the user is in the "awaiting_file" state
-    elif message.chat.id in conversation_state and conversation_state[message.chat.id] == "awaiting_file":
-        # Check if the message contains a file
-        if message.document:
-            # Download the file
-            file_path = await message.download(file_name="file")
+    # Check if the message matches any of the user-defined filters
+    for filter_name, filter_data in filters_dict.items():
+        if filter_name.lower() in message.text.lower():
+            # Create an inline keyboard with a button
+            keyboard = InlineKeyboardMarkup([[InlineKeyboardButton(filter_data["button_text"], callback_data="button_clicked")]])
+            
+            # Reply with the image caption and the inline keyboard
+            await message.reply_text(filter_data["image_caption"], reply_markup=keyboard)
+            return
 
-            # Send the file with the set caption
-            await message.reply_photo(
-                photo=conversation_state[message.chat.id + "_image_path"],
-                caption=conversation_state[message.chat.id + "_caption"]
-            )
+# Handler for button click
+@app.on_callback_query()
+async def handle_button_click(client, callback_query):
+    # Check if the button was clicked
+    if callback_query.data == "button_clicked":
+        # Reply to the button click with a message
+        await callback_query.answer("Button clicked!")
 
-            # Delete the message after sending the file
-            await message.delete()
-
-            # Clear the conversation state
-            del conversation_state[message.chat.id]
-            del conversation_state[message.chat.id + "_image_path"]
-            del conversation_state[message.chat.id + "_caption"]
-        else:
-            # If the message does not contain a file, ask the user to resend
-            await message.reply_text("Please send the file.")
-
+# Start the Pyrogram Client
 app.run()
