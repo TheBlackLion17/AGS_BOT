@@ -24,31 +24,48 @@ async def handle_message(client, message: Message):
 
         # Check if the message contains enough components
         if len(components) < 2:
-            await message.reply_text("Please provide a name for the filter.")
+            await message.reply_text("Please provide a name and button text for the filter.")
             return
         
         # Unpack the components
-        _, filter_name = components
+        _, filter_name_and_button_text = components
+        try:
+            filter_name, button_text = filter_name_and_button_text.split(maxsplit=1)
+        except ValueError:
+            await message.reply_text("Please provide both filter name and button text.")
+            return
 
-        # Add the pending filter to the dictionary
-        await message.reply_text(f"Please send the document to attach to the filter '{filter_name}'.")
+        # Add the filter to the filters dictionary
+        filters_dict[filter_name] = {
+            "button_text": button_text
+        }
+
+        await message.reply_text(f"Filter '{filter_name}' added successfully.")
         return
 
-    # Check if the message contains a document
-    if message.document:
-        # Store the document in the filter dictionary
-        filters_dict[message.text] = message.document.file_id
+# Handler for inline queries
+@app.on_inline_query()
+async def handle_inline_query(client, inline_query):
+    results = []
 
-        await message.reply_text(f"Filter '{message.text}' added successfully.")
-        return
+    # Check if the inline query is from an admin
+    if inline_query.from_user.id in ADMIN_IDS:
+        for filter_name, filter_data in filters_dict.items():
+            if filter_name.lower() in inline_query.query.lower():
+                results.append(
+                    InlineQueryResultArticle(
+                        title=filter_name,
+                        input_message_content=InputTextMessageContent(
+                            message_text=filter_name,
+                            parse_mode="HTML"
+                        ),
+                        reply_markup=InlineKeyboardMarkup([
+                            [InlineKeyboardButton(filter_data["button_text"], switch_inline_query_current_chat=filter_name)]
+                        ])
+                    )
+                )
 
-# Handler for messages from non-admin users
-@app.on_message(filters.private & ~filters.user(ADMIN_ID))
-async def handle_message_non_admin(client, message: Message):
-    # Check if the message is a filter name
-    if message.text and message.text in filters_dict:
-        # Send the document associated with the filter name
-        await message.reply_document(filters_dict[message.text])
+    await inline_query.answer(results)
 
 # Start the Pyrogram Client
 app.run()
