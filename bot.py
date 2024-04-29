@@ -11,13 +11,8 @@ app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 filters_dict = {}
 
 # Handler for messages
-@app.on_message()
+@app.on_message(filters.private & filters.user(ADMIN_ID))
 async def handle_message(client, message: Message):
-    # Check if the message is from an admin
-    if message.from_user.id not in ADMIN_ID:
-        await message.reply_text("You are not authorized to use this bot.")
-        return
-    
     # Check if the message is a command to create a filter
     if message.text.startswith("/addfilter"):
         # Split the message into filter name, image caption, and button text
@@ -36,7 +31,7 @@ async def handle_message(client, message: Message):
     for filter_name, filter_data in filters_dict.items():
         if filter_name.lower() in message.text.lower():
             # Create an inline keyboard with a button
-            keyboard = InlineKeyboardMarkup([[InlineKeyboardButton(filter_data["button_text"], callback_data="button_clicked")]])
+            keyboard = InlineKeyboardMarkup([[InlineKeyboardButton(filter_data["button_text"], callback_data=filter_name)]])
             
             # Reply with the image caption and the inline keyboard
             await message.reply_text(filter_data["image_caption"], reply_markup=keyboard)
@@ -46,9 +41,11 @@ async def handle_message(client, message: Message):
 @app.on_callback_query()
 async def handle_button_click(client, callback_query):
     # Check if the button was clicked
-    if callback_query.data == "button_clicked":
-        # Reply to the button click with a message
-        await callback_query.answer("Button clicked!")
+    filter_name = callback_query.data
+    if filter_name in filters_dict:
+        filter_data = filters_dict[filter_name]
+        # Prompt the user to send a file
+        await callback_query.message.reply_text("Please send the file.")
 
 # Start the Pyrogram Client
 app.run()
