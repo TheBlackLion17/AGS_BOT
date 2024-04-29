@@ -2,18 +2,15 @@ from pyrogram import Client, filters
 from pyrogram.types import Message
 
 # Importing configuration from config.py
-from config import API_ID, API_HASH, BOT_TOKEN, ADMIN_USER_IDS
+from config import API_ID, API_HASH, BOT_TOKEN
 
 # Initialize the Pyrogram Client
 app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Custom filter to check if the user is an admin
-
-
 # Handler for the /start command
 @app.on_message(filters.command("start"))
 async def start_command(client, message: Message):
-    # Prompt the admin to set the image and caption
+    # Prompt the user to set the image and caption
     await message.reply_text("Please set the image and caption.")
 
     # Set the next handler to handle image and caption setting
@@ -32,14 +29,14 @@ async def set_image_and_caption(client, message: Message):
         app.image_path = photo_path
         app.caption = message.text
 
-        # Ask the admin to send the file
+        # Ask the user to send the file
         await message.reply_text("Please send the file.")
     else:
-        # If the message does not contain an image, ask the admin to resend
+        # If the message does not contain an image, ask the user to resend
         await message.reply_text("Please send the image as a photo.")
 
-# Handler for file sent by the admin
-@app.on_message(is_admin)
+# Handler for file sent by the user
+@app.on_message()
 async def handle_file(client, message: Message):
     # Check if the bot has set the image and caption
     if hasattr(app, 'image_path') and hasattr(app, 'caption'):
@@ -54,7 +51,7 @@ async def handle_file(client, message: Message):
             # Delete the message after sending the file
             await message.delete()
         else:
-            # If the message does not contain a file, ask the admin to resend
+            # If the message does not contain a file, ask the user to resend
             await message.reply_text("Please send the file.")
     else:
         # If the bot has not set the image and caption, ignore the file
