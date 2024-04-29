@@ -43,7 +43,7 @@ async def handle_message(client, message: Message):
         return
 
 # Handler for messages from non-admin users
-@app.on_message(filters.private & ~filters.user(ADMIN_IDS))
+@app.on_message(filters.private & ~filters.user(ADMIN_ID))
 async def handle_message_non_admin(client, message: Message):
     # Check if the message is a filter name
     if message.text and message.text in filters_dict:
