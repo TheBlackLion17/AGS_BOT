@@ -10,9 +10,6 @@ app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 # Dictionary to store user-defined filters
 filters_dict = {}
 
-# Dictionary to store documents sent by users
-document_cache = {}
-
 # Handler for messages
 @app.on_message(filters.private & filters.user(ADMIN_ID))
 async def handle_message(client, message: Message):
@@ -20,46 +17,38 @@ async def handle_message(client, message: Message):
     if message is None:
         return
 
-    
-
-
     # Check if the message is a command to create a filter
     if message.text and message.text.startswith("/addfilter"):
-        # Split the message into filter name, image caption, and button text
-        _, filter_name, image_caption, button_text = message.text.split(maxsplit=3)
+        # Split the message into components
+        components = message.text.split(maxsplit=1)
 
-        # Add the filter to the filters dictionary
-        filters_dict[filter_name] = {
-            "image_caption": image_caption,
-            "button_text": button_text
-        }
+        # Check if the message contains enough components
+        if len(components) < 2:
+            await message.reply_text("Please provide a name for the filter.")
+            return
+        
+        # Unpack the components
+        _, filter_name = components
 
-        await message.reply_text(f"Filter '{filter_name}' added successfully.")
+        # Add the pending filter to the dictionary
+        await message.reply_text(f"Please send the document to attach to the filter '{filter_name}'.")
         return
 
     # Check if the message contains a document
     if message.document:
-        # Store the document in the document cache
-        document_cache[message.chat.id] = message.document
+        # Store the document in the filter dictionary
+        filters_dict[message.text] = message.document.file_id
 
-        await message.reply_text("Document received. You can now use the /addfilter command to create a filter.")
+        await message.reply_text(f"Filter '{message.text}' added successfully.")
         return
 
-# Handler for button click
-@app.on_callback_query()
-async def handle_button_click(client, callback_query):
-    # Check if the button was clicked
-    filter_name = callback_query.data
-    if filter_name in filters_dict:
-        filter_data = filters_dict[filter_name]
-        
-        # Get the document from the cache
-        document = document_cache.get(callback_query.message.chat.id)
-        if document:
-            # Send the document
-            await callback_query.message.reply_document(document.file_id, caption=filter_data["image_caption"])
-        else:
-            await callback_query.message.reply_text("No document found.")
+# Handler for messages from non-admin users
+@app.on_message(filters.private & ~filters.user(ADMIN_IDS))
+async def handle_message_non_admin(client, message: Message):
+    # Check if the message is a filter name
+    if message.text and message.text in filters_dict:
+        # Send the document associated with the filter name
+        await message.reply_document(filters_dict[message.text])
 
 # Start the Pyrogram Client
 app.run()
