@@ -13,7 +13,7 @@ def start(_, update):
 
 
 # Auto-filter function
-@app.on_message(~filters.command & ~filters.private)
+@app.on_message(~filters.private & ~filters.command)
 def auto_filter(_, update):
     # You can add your filtering logic here
     # For this example, let's simply echo the message back
