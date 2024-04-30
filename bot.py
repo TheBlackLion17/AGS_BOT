@@ -8,10 +8,10 @@ from config import API_ID, API_HASH, BOT_TOKEN
 app = Client("autofilter_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 # Regular expression pattern to match the specified format
-pattern = r"\[(.*?)\]\(buttonurl://(.*?)\)"
+pattern = r"\[(.*?)\]\(buttonurl://(.*?):(.*?)\)"
 
-# List to store filter keywords
-filters_list = []
+# Dictionary to store filter name and URL pairs
+filters_dict = {}
 
 
 # Command to start the bot
@@ -26,35 +26,32 @@ def add_filter_command(_, update):
     # Get the text after the command
     text = update.text.split(maxsplit=1)
     if len(text) == 2:
-        keyword = text[1].strip().lower()
-        if keyword not in filters_list:
-            filters_list.append(keyword)
-            update.reply_text(f"Filter '{keyword}' added successfully!")
+        # Extract filter name, URL, and button text from the command
+        match = re.match(pattern, text[1])
+        if match:
+            name = match.group(1)
+            url = match.group(2)
+            button_text = match.group(3)
+            filters_dict[name] = {"url": url, "button_text": button_text}
+            update.reply_text(f"Filter '{name}' added successfully!")
         else:
-            update.reply_text(f"Filter '{keyword}' already exists!")
+            update.reply_text("Invalid filter format. Please use [name](buttonurl://example.com:same) format.")
     else:
-        update.reply_text("Please provide a keyword after the command.")
+        update.reply_text("Please provide a filter in the correct format after the command.")
 
 
-# Auto-filter function
+# Function to handle messages containing filter names
 @app.on_message(~filters.private)
-def auto_filter(_, update):
-    for keyword in filters_list:
-        if keyword in update.text.lower():
-            # If the keyword is found, extract the button URL and name
-            match = re.search(pattern, update.text)
-            if match:
-                name = match.group(1)
-                url = match.group(2)
-
-                # Create the custom button
-                button = InlineKeyboardButton(
-                    name,
-                    url=url
-                )
-                keyboard = InlineKeyboardMarkup([[button]])
-                update.reply_text(f"Filtered message: {update.text}", reply_markup=keyboard)
-                return
+def handle_filter_name(_, update):
+    # Check if the message contains the name of a filter
+    for name in filters_dict.keys():
+        if name.lower() in update.text.lower():
+            # Send the corresponding filter to the user
+            data = filters_dict[name]
+            button = InlineKeyboardButton(data["button_text"], url=data["url"])
+            keyboard = InlineKeyboardMarkup([[button]])
+            update.reply_text(f"Filter '{name}': {data['button_text']}", reply_markup=keyboard)
+            return
 
 
 # Run the bot
