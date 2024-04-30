@@ -3,3 +3,4 @@ dnspython==2.3.0
 pytz==2023.3
 TgCrypto==1.2.5 
 requests==2.31.0
+pillow==10.3.0
