@@ -1,67 +1,89 @@
-import re
+import io
+import textwrap
+from PIL import Image, ImageDraw, ImageFont
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
+from pyrogram.types import Message
 from config import API_ID, API_HASH, BOT_TOKEN
 
 # Initialize the Pyrogram client
-app = Client("autofilter_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+app = Client("sticker_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Regular expression pattern to match the specified format with alphanumeric filter names
-pattern = r"\[([a-zA-Z0-9]+)\]\(buttonurl://(.*?):(.*?)\)"
-
-# Dictionary to store filter name and URL pairs
-filters_dict = {}
+# Dictionary to store the user's current state (waiting for image)
+user_state = {}
 
 
 # Command to start the bot
 @app.on_message(filters.command("start"))
 def start(_, update):
-    update.reply_text("Hello! I'm an auto-filter bot. Send me a message and I'll filter it for you.")
+    update.reply_text("Hello! I'm a sticker bot. Send me an image and I'll add text to it and turn it into a sticker for you!")
 
 
-# Command to add a filter
-@app.on_message(filters.command("addfilter") & filters.private)
-def add_filter_command(_, update):
-    # Get the text after the command
-    text = update.text.split(maxsplit=1)
-    if len(text) == 2:
-        # Extract filter name, URL, and button text from the command
-        match = re.match(pattern, text[1])
-        if match:
-            name = match.group(1)
-            url = match.group(2)
-            button_text = match.group(3)
-            filters_dict[name] = {"url": url, "button_text": button_text}
-            update.reply_text(f"Filter '{name}' added successfully!")
-        else:
-            update.reply_text("Invalid filter format. Please use [name](buttonurl://example.com:same) format with alphanumeric filter names.")
+# Function to create sticker from image with text
+def create_sticker(image_bytes, text):
+    # Load the image
+    img = Image.open(io.BytesIO(image_bytes))
+
+    # Initialize drawing context
+    draw = ImageDraw.Draw(img)
+
+    # Load a font
+    font = ImageFont.truetype("arial.ttf", 48)
+
+    # Wrap text into lines
+    lines = textwrap.wrap(text, width=10)
+
+    # Calculate text size and position
+    y_text = 10
+    for line in lines:
+        width, height = draw.textsize(line, font=font)
+        draw.text(((img.width - width) / 2, y_text), line, font=font, fill="black")
+        y_text += height + 10
+
+    # Convert image to bytes
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format='PNG')
+    img_bytes.seek(0)
+
+    return img_bytes
+
+
+# Function to handle messages containing images
+@app.on_message(filters.photo)
+def image_to_sticker(_, update: Message):
+    chat_id = update.chat.id
+
+    if chat_id in user_state and user_state[chat_id] == "waiting_for_text":
+        # Retrieve the image and text
+        image_file_id = update.photo[-1].file_id
+        text = update.caption
+
+        # Download the image
+        image_bytes = app.download_media(image_file_id)
+
+        # Create sticker from image with text
+        sticker_bytes = create_sticker(image_bytes, text)
+
+        # Send the sticker
+        update.reply_sticker(sticker_bytes)
+
+        # Reset user state
+        del user_state[chat_id]
+
     else:
-        update.reply_text("Please provide a filter in the correct format after the command.")
+        # Ask the user to send an image
+        update.reply_text("Please send an image first.")
 
 
-# Command to show filters to the user
-@app.on_message(filters.command("showfilter") & filters.private)
-def show_filter_command(_, update):
-    if filters_dict:
-        filters_info = "\n".join([f"- {name}: {data['url']}" for name, data in filters_dict.items()])
-        update.reply_text(f"Current Filters:\n{filters_info}")
-    else:
-        update.reply_text("There are no filters currently.")
+# Function to handle messages containing text
+@app.on_message(filters.text)
+def handle_text(_, update):
+    chat_id = update.chat.id
 
+    # Set user state to waiting for text
+    user_state[chat_id] = "waiting_for_text"
 
-# Function to handle messages containing filter names
-@app.on_message(~filters.private)
-def handle_filter_name(_, update):
-    # Check if the message contains the name of a filter
-    for name in filters_dict.keys():
-        if name.lower() in update.text.lower():
-            # Send the corresponding filter to the user
-            data = filters_dict[name]
-            button = InlineKeyboardButton(data["button_text"], url=data["url"])
-            keyboard = InlineKeyboardMarkup([[button]])
-            update.reply_text(f"Filter '{name}': {data['button_text']}", reply_markup=keyboard)
-            return
+    # Ask the user to send text
+    update.reply_text("Please send the text you want to add to the image.")
 
 
 # Run the bot
