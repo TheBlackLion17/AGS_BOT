@@ -7,8 +7,8 @@ from config import API_ID, API_HASH, BOT_TOKEN
 # Initialize the Pyrogram client
 app = Client("autofilter_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Regular expression pattern to match the specified format
-pattern = r"\[(.*?)\]\(buttonurl://(.*?):(.*?)\)"
+# Regular expression pattern to match the specified format with alphanumeric filter names
+pattern = r"\[([a-zA-Z0-9]+)\]\(buttonurl://(.*?):(.*?)\)"
 
 # Dictionary to store filter name and URL pairs
 filters_dict = {}
@@ -35,9 +35,19 @@ def add_filter_command(_, update):
             filters_dict[name] = {"url": url, "button_text": button_text}
             update.reply_text(f"Filter '{name}' added successfully!")
         else:
-            update.reply_text("Invalid filter format. Please use [name](buttonurl://example.com:same) format.")
+            update.reply_text("Invalid filter format. Please use [name](buttonurl://example.com:same) format with alphanumeric filter names.")
     else:
         update.reply_text("Please provide a filter in the correct format after the command.")
+
+
+# Command to show filters to the user
+@app.on_message(filters.command("showfilter") & filters.private)
+def show_filter_command(_, update):
+    if filters_dict:
+        filters_info = "\n".join([f"- {name}: {data['url']}" for name, data in filters_dict.items()])
+        update.reply_text(f"Current Filters:\n{filters_info}")
+    else:
+        update.reply_text("There are no filters currently.")
 
 
 # Function to handle messages containing filter names
