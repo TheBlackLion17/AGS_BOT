@@ -1,15 +1,11 @@
 import os, math, logging, datetime, pytz
-import logging.config
 
 from pyrogram.errors import BadRequest, Unauthorized
 from pyrogram import Client
 from pyrogram import types
 
-from database.ia_filterdb import Media
-from database.users_chats_db import db
+
 from info import API_ID, API_HASH, BOT_TOKEN, LOG_CHANNEL, UPTIME, WEBHOOK, LOG_MSG
-from utils import temp, __repo__, __license__, __copyright__, __version__
-from typing import Union, Optional, AsyncGenerator
 
 from plugins import web_server 
 from aiohttp import web
