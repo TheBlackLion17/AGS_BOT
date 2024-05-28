@@ -8,7 +8,6 @@ from pyrogram import types
 
 from info import API_ID, API_HASH, BOT_TOKEN, LOG_CHANNEL, UPTIME, WEBHOOK, LOG_MSG
 
-from plugins import web_server 
 from aiohttp import web
 
 # Get logging configurations
@@ -22,7 +21,7 @@ class Bot(Client):
 
     def __init__(self):
         super().__init__(
-            name="Professor-Bot",
+            name="AGS-Bot",
             api_id=API_ID,
             api_hash=API_HASH,
             bot_token=BOT_TOKEN,
