@@ -1,0 +1,38 @@
+{
+    "name": "AGS_BOT",
+    "description": "The Telegram Autofilter Bot",
+    "logo": "https://telegra.ph/file/240720bec6145bb269f17.jpg",
+    "keywords": ["Telegram", "auto-filter", "AGS"],
+    "repository": "https://github.com/TheBlackLion17/AGS_BOT",
+    "env": {
+        "WEBHOOK": {
+            "description": "True/False if your server is web support required? the value is True else False",
+            "value": "True",
+            "required": true
+        },
+        "BOT_TOKEN": {
+            "description": "Your bot token.",
+            "required": true
+        },
+        "API_ID": {
+            "description": "Get this value from https://my.telegram.org",
+            "required": true
+        },
+        "API_HASH": {
+            "description": "Get this value from https://my.telegram.org",
+            "required": true
+        },
+        "PICS": {
+            "description": "Add some telegraph link of pictures .",
+            "required": false
+        },
+        "LOG_CHANNEL": {
+            "description": "Bot Logs,Give a channel id with -100xxxxxxx",
+            "required": true                              
+        }
+    },
+    "buildpacks":
+        [
+            {"url": "heroku/python"}
+        ]      
+}
