@@ -17,3 +17,4 @@ BOT_TOKEN = environ('BOT_TOKEN','6900955318:AAFW2S6dhijU5ybVSH9qoPi-xucjBqDTqzE'
 WEBHOOK = bool(environ.get("WEBHOOK", True)) # for web support on/off
 PICS = (environ.get('PICS' ,'https://telegra.ph/file/240720bec6145bb269f17.jpg')).split()
 UPTIME = time.time()
+LOG_CHANNEL = int(environ.get('LOG_CHANNEL', "-1002038658435"))
