@@ -10,9 +10,10 @@ def is_enabled(value, default):
     else: return default
 
 
-API_ID = int(environ('API_ID','6976445947'))
-API_HASH = environ('API_HASH','d39c4324a40a8a6b27a067f8ff2b987e')
-BOT_TOKEN = environ('BOT_TOKEN','7101381082:AAFOaYNVIksYKcRyEzbZ5Aa8Xrh4UwnE-K8')
+# PyroClient Setup 
+API_ID = int(environ['API_ID'])
+API_HASH = environ['API_HASH']
+BOT_TOKEN = environ['BOT_TOKEN']
 
 WEBHOOK = bool(environ.get("WEBHOOK", True)) # for web support on/off
 PICS = (environ.get('PICS' ,'https://telegra.ph/file/240720bec6145bb269f17.jpg')).split()
