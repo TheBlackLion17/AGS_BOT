@@ -1,90 +1,82 @@
-import io
-import textwrap
-from PIL import Image, ImageDraw, ImageFont
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from config import API_ID, API_HASH, BOT_TOKEN
+import os, math, logging, datetime, pytz
+import logging.config
 
-# Initialize the Pyrogram client
-app = Client("sticker_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+from pyrogram.errors import BadRequest, Unauthorized
+from pyrogram import Client
+from pyrogram import types
 
-# Dictionary to store the user's current state (waiting for image)
-user_state = {}
+from database.ia_filterdb import Media
+from database.users_chats_db import db
+from info import API_ID, API_HASH, BOT_TOKEN, LOG_CHANNEL, UPTIME, WEBHOOK, LOG_MSG
+from utils import temp, __repo__, __license__, __copyright__, __version__
+from typing import Union, Optional, AsyncGenerator
 
+from plugins import web_server 
+from aiohttp import web
 
-# Command to start the bot
-@app.on_message(filters.command("start"))
-def start(_, update):
-    update.reply_text("Hello! I'm a sticker bot. Send me an image and I'll add text to it and turn it into a sticker for you!")
-
-
-# Function to create sticker from image with text
-def create_sticker(image_bytes, text):
-    # Load the image
-    img = Image.open(io.BytesIO(image_bytes))
-
-    # Initialize drawing context
-    draw = ImageDraw.Draw(img)
-
-    # Load a font
-    font = ImageFont.truetype("arial.ttf", 48)
-
-    # Wrap text into lines
-    lines = textwrap.wrap(text, width=10)
-
-    # Calculate text size and position
-    y_text = 10
-    for line in lines:
-        width, height = draw.textsize(line, font=font)
-        draw.text(((img.width - width) / 2, y_text), line, font=font, fill="black")
-        y_text += height + 10
-
-    # Convert image to bytes
-    img_bytes = io.BytesIO()
-    img.save(img_bytes, format='PNG')
-    img_bytes.seek(0)
-
-    return img_bytes
+# Get logging configurations
+logging.config.fileConfig("logging.conf")
+logging.getLogger().setLevel(logging.INFO)
+logging.getLogger("cinemagoer").setLevel(logging.ERROR)
+logger = logging.getLogger(__name__)
 
 
-# Function to handle messages containing images
-@app.on_message(filters.photo)
-def image_to_sticker(_, update: Message):
-    chat_id = update.chat.id
+class Bot(Client):
 
-    if chat_id in user_state and user_state[chat_id] == "waiting_for_text":
-        # Retrieve the image and text
-        image_file_id = update.photo[-1].file_id
-        text = update.caption
+    def __init__(self):
+        super().__init__(
+            name="Professor-Bot",
+            api_id=API_ID,
+            api_hash=API_HASH,
+            bot_token=BOT_TOKEN,
+            workers=200,
+            plugins={"root": "plugins"},
+            sleep_threshold=10,
+        )
 
-        # Download the image
-        image_bytes = app.download_media(image_file_id)
+    async def start(self):
+        b_users, b_chats = await db.get_banned()
+        temp.BANNED_USERS = b_users
+        temp.BANNED_CHATS = b_chats        
+        await super().start()
+        await Media.ensure_indexes()
+        me = await self.get_me()
+        temp.U_NAME = me.username
+        temp.B_NAME = me.first_name
+        self.id = me.id
+        self.name = me.first_name
+        self.mention = me.mention
+        self.username = me.username
+        self.log_channel = LOG_CHANNEL
+        self.uptime = UPTIME
+        curr = datetime.datetime.now(pytz.timezone("Asia/Kolkata"))
+        date = curr.strftime('%d %B, %Y')
+        tame = curr.strftime('%I:%M:%S %p')
+        logger.info(LOG_MSG.format(me.first_name, date, tame, __repo__, __version__, __license__, __copyright__))
+        try: await self.send_message(LOG_CHANNEL, text=LOG_MSG.format(me.first_name, date, tame, __repo__, __version__, __license__, __copyright__), disable_web_page_preview=True)   
+        except Exception as e: logger.warning(f"Bot Isn't Able To Send Message To LOG_CHANNEL \n{e}")
+        if WEBHOOK is True:
+            app = web.AppRunner(await web_server())
+            await app.setup()
+            await web.TCPSite(app, "0.0.0.0", 8080).start()
+            logger.info("Bot Is Running......🕸️")
+            
+    async def stop(self, *args):
+        await super().stop()
+        me = await self.get_me()
+        logger.info(f"{me.first_name} agsis_...  ♻️Runing...")
 
-        # Create sticker from image with text
-        sticker_bytes = create_sticker(image_bytes, text)
-
-        # Send the sticker
-        update.reply_sticker(sticker_bytes)
-
-        # Reset user state
-        del user_state[chat_id]
-
-    else:
-        # Ask the user to send an image
-        update.reply_text("Please send an image first.")
+    async def iter_messages(self, chat_id: Union[int, str], limit: int, offset: int = 0) -> Optional[AsyncGenerator["types.Message", None]]:                       
+        current = offset
+        while True:
+            new_diff = min(200, limit - current)
+            if new_diff <= 0:
+                return
+            messages = await self.get_messages(chat_id, list(range(current, current+new_diff+1)))
+            for message in messages:
+                yield message
+                current += 1
 
 
-# Function to handle messages containing text
-@app.on_message(filters.text)
-def handle_text(_, update):
-    chat_id = update.chat.id
-
-    # Set user state to waiting for text
-    user_state[chat_id] = "waiting_for_text"
-
-    # Ask the user to send text
-    update.reply_text("Please send the text you want to add to the image.")
-
-
-# Run the bot
-app.run()
+        
+Bot().run()
