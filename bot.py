@@ -62,16 +62,7 @@ class Bot(Client):
         me = await self.get_me()
         logger.info(f"{me.first_name} agsis_...  ♻️Runing...")
 
-    async def iter_messages(self, chat_id: Union[int, str], limit: int, offset: int = 0) -> Optional[AsyncGenerator["types.Message", None]]:                       
-        current = offset
-        while True:
-            new_diff = min(200, limit - current)
-            if new_diff <= 0:
-                return
-            messages = await self.get_messages(chat_id, list(range(current, current+new_diff+1)))
-            for message in messages:
-                yield message
-                current += 1
+
 
 
         
