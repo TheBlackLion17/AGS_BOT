@@ -1,66 +1,43 @@
-import os, math, logging, datetime, pytz
-import logging.config
-
-from pyrogram.errors import BadRequest, Unauthorized
-from pyrogram import Client
-from pyrogram import types
-
-
-from info import API_ID, API_HASH, BOT_TOKEN, LOG_CHANNEL, UPTIME, WEBHOOK, LOG_MSG
-
+from datetime import datetime
+from pytz import timezone
+from pyrogram import Client, __version__
+from pyrogram.raw.all import layer
+from info import *
 from aiohttp import web
-
-# Get logging configurations
-logging.config.fileConfig("logging.conf")
-logging.getLogger().setLevel(logging.INFO)
-logging.getLogger("cinemagoer").setLevel(logging.ERROR)
-logger = logging.getLogger(__name__)
-
+from route import web_server
 
 class Bot(Client):
 
     def __init__(self):
         super().__init__(
-            name="AGS-Bot",
-            api_id=API_ID,
-            api_hash=API_HASH,
-            bot_token=BOT_TOKEN,
+            name="renamer",
+            api_id=Config.API_ID,
+            api_hash=Config.API_HASH,
+            bot_token=Config.BOT_TOKEN,
             workers=200,
             plugins={"root": "plugins"},
-            sleep_threshold=10,
+            sleep_threshold=15,
         )
 
-    async def start(self):      
+    async def start(self):
         await super().start()
-        await Media.ensure_indexes()
         me = await self.get_me()
-        temp.U_NAME = me.username
-        temp.B_NAME = me.first_name
-        self.id = me.id
-        self.name = me.first_name
         self.mention = me.mention
-        self.username = me.username
-        self.log_channel = LOG_CHANNEL
-        self.uptime = UPTIME
-        curr = datetime.datetime.now(pytz.timezone("Asia/Kolkata"))
-        date = curr.strftime('%d %B, %Y')
-        tame = curr.strftime('%I:%M:%S %p')
-        logger.info(LOG_MSG.format(me.first_name, date, tame, __repo__, __version__, __license__, __copyright__))
-        try: await self.send_message(LOG_CHANNEL, text=LOG_MSG.format(me.first_name, date, tame, __repo__, __version__, __license__, __copyright__), disable_web_page_preview=True)   
-        except Exception as e: logger.warning(f"Bot Isn't Able To Send Message To LOG_CHANNEL \n{e}")
-        if WEBHOOK is True:
+        self.username = me.username  
+        self.uptime = Config.BOT_UPTIME     
+        if Config.WEBHOOK:
             app = web.AppRunner(await web_server())
-            await app.setup()
-            await web.TCPSite(app, "0.0.0.0", 8080).start()
-            logger.info("Bot Is Running......🕸️")
-            
-    async def stop(self, *args):
-        await super().stop()
-        me = await self.get_me()
-        logger.info(f"{me.first_name} agsis_...  ♻️Runing...")
-
-
-
-
+            await app.setup()       
+            await web.TCPSite(app, "0.0.0.0", 8080).start()     
+        print(f"{me.first_name} Is On To Fire.....🔥")
         
+        if Config.LOG_CHANNEL:
+            try:
+                curr = datetime.now(timezone("Asia/Kolkata"))
+                date = curr.strftime('%d %B, %Y')
+                time = curr.strftime('%I:%M:%S %p')
+                await self.send_message(Config.LOG_CHANNEL, f"**{me.mention} Is Restarted !!**\n\n📅 Date : `{date}`\n⏰ Time : `{time}`\n🌐 Timezone : `Asia/Kolkata`\n\n🉐 Version : `v{__version__} (Layer {layer})`</b>")                                
+            except:
+                print("Please Make This Is Admin In Your Log Channel")
+
 Bot().run()
